@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bai tap 2</title>
+        <meta charset="utf-8">
+        <script>
+            let fullName = "Vu Thu Hien";
+            let studentId = "27A4042934";
+
+            // 1. Tạo email (hien + v + t)
+            let nameArr = fullName.toLowerCase().split(" ");
+            let email = nameArr[2] + nameArr[0].charAt(0) + nameArr[1].charAt(0) + "." + studentId.toLowerCase() + "@hvnh.edu.vn";
+
+            // 2. Tính toán các thông tin
+            let khoaHoc = studentId.substring(0, 2); // Khóa 27
+            let tenKhoa = studentId.charAt(2);       // Khoa A
+            // Lấy 4 số cuối (vị trí 6, 7, 8, 9) cộng lại
+            let tong = parseInt(studentId.charAt(6)) + parseInt(studentId.charAt(7)) + parseInt(studentId.charAt(8)) + parseInt(studentId.charAt(9));
+
+            // 3. In kết quả ra màn hình bằng document.write
+            document.write("Email: " + email + "<br><br>");
+            document.write("Xin chào " + fullName + ", bạn là sinh viên khóa " + khoaHoc + ", khoa " + tenKhoa + ", tổng 4 số cuối trong mã sinh viên là " + tong);
+        </script>
+    </head>
+    <body>
+        <h1>Bai tap 2</h1>
+    </body>
+</html>
