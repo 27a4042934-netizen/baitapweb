@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Sinh Viên</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #669900; margin-bottom: 20px; }
+        .upload-area { text-align: center; margin-bottom: 30px; padding: 20px; border: 2px dashed #669900; border-radius: 8px; background-color: #e9f5e2; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #669900; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>DANH SÁCH SINH VIÊN</h2>
+        
+        <div class="upload-area">
+            <label for="excelFileInput" style="font-weight: bold; font-size: 1.1em;">📁 Chọn file Excel (.xlsx):</label><br><br>
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls">
+        </div>
+
+        <table id="studentTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Mã SV</th>
+                    <th>Họ và Tên</th>
+                    <th>Khóa</th>
+                    <th>Khoa</th>
+                    <th>Email Trường</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 1. CLASS SINH VIÊN 
+        class SinhVien {
+            constructor(stt, id, fullName) {
+                this.stt = stt;
+                this.id = id;
+                this.fullName = fullName;
+            }
+
+            // Lấy Khóa: Cắt 2 số đầu tiên
+            getCourse() { 
+                return this.id.substring(0, 2); 
+            }
+            
+            // [MỚI] Lấy Khoa: Cắt 3 số (vị trí 3, 4, 5) và dùng switch-case
+            getFaculty() { 
+                let code = this.id.substring(3, 6); // VD: 27A[404]2905 -> lấy "404"
+                
+                switch (code) {
+                    case "401": return "Tài chính hoặc Ngân hàng";
+                    case "402": return "Kế toán - Kiểm toán";
+                    case "403": return "Quản trị kinh doanh";
+                    case "404": return "Công nghệ thông tin";
+                    case "405": return "Kinh doanh quốc tế";
+                    case "406": return "Luật";
+                    case "407": return "Kinh tế";
+                    case "408": return "Khoa học dữ liệu";
+                    case "751": return "Ngoại ngữ";
+                    default: return "Không xác định";
+                }
+            }
+
+            removeAccents(str) {
+                return str.normalize('NFD')
+                          .replace(/[\u0300-\u036f]/g, '')
+                          .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+            }
+
+            getEmail() {
+                let cleanName = this.removeAccents(this.fullName).toLowerCase().trim();
+                let nameParts = cleanName.split(/\s+/);
+                let firstName = nameParts.pop();
+                
+                let initials = "";
+                for (let i = 0; i < nameParts.length; i++) {
+                    initials += nameParts[i].charAt(0);
+                }
+                return `${firstName}${initials}.${this.id.toLowerCase()}@hvnh.edu.vn`;
+            }
+        }
+
+        // 2. XỬ LÝ KHI NGƯỜI DÙNG TẢI FILE LÊN
+        document.getElementById('excelFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                const excelRows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                processData(excelRows);
+            };
+            
+            reader.readAsArrayBuffer(file); 
+        });
+
+        // 3. ĐỔ DỮ LIỆU RA BẢNG
+        function processData(rows) {
+            const studentsArray = [];
+
+            for (let i = 1; i < rows.length; i++) {
+                let row = rows[i];
+                if (row.length === 0 || !row[1]) continue; 
+
+                let stt = String(row[0] || "").trim();
+                let id = String(row[1]).trim();
+                let name = String(row[2]).trim();
+
+                let sv = new SinhVien(stt, id, name);
+                studentsArray.push(sv);
+            }
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            document.getElementById('studentTable').style.display = 'table';
+
+            studentsArray.forEach(sv => {
+                let tr = `<tr>
+                    <td>${sv.stt}</td>
+                    <td>${sv.id}</td>
+                    <td>${sv.fullName}</td>
+                    <td>Khóa ${sv.getCourse()}</td>
+                    <td style="font-weight: bold; color: #d35400;">${sv.getFaculty()}</td>
+                    <td style="color: #0066cc;">${sv.getEmail()}</td>
+                </tr>`;
+                tbody.innerHTML += tr;
+            });
+        }
+    </script>
+</body>
+</html>
